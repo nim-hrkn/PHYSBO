@@ -515,7 +515,9 @@ class Policy:
                 # Ensure t is normalized
                 if extra_train.t is not None:
                     extra_train.t = normalize_t(extra_train.t, k=1)
-                trains[k].add(X=extra_train.X, t=extra_train.t)
+                # Z (random feature basis) must be added together with X when the predictor is a BLM;
+                # otherwise Variable.check_shape() fails with "The number of X and Z must be the same"
+                trains[k].add(X=extra_train.X, t=extra_train.t, Z=extra_train.Z)
                 predictors[k].update(trains[k], extra_train, objective_index=0)
 
             def fn(x):
@@ -568,6 +570,10 @@ class Policy:
 
         for n in range(1, N):
             extra_training = Variable(X=X[0:n, :])
+            # the basis of the already chosen points (None for a GP predictor, (n, nbasis) for a BLM)
+            extra_Z = self.predictor.get_basis(X[0:n, :])
+            if extra_Z is not None:
+                extra_training.Z = extra_Z[np.newaxis, :, :]
             t = self.predictor.get_predict_samples(
                 self.training, extra_training, K, objective_index=0
             )

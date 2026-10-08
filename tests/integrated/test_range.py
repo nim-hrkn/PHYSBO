@@ -109,3 +109,21 @@ class TestRange:
         best_fx, best_action = self.policy.history.export_all_sequence_best_fx()
         assert best_fx[-1] == pytest.approx(solution_target, abs=0.001)
         assert np.allclose(best_action[-1], solution, atol=0.1)
+
+    def test_bayes_search_multi_probe_rand(self):
+        """several points per step with the random-feature BLM (num_rand_basis > 0): the basis Z of the
+        virtual training points must be added together with X (regression: Variable.check_shape failed)."""
+        self.policy.random_search(max_num_probes=self.nrand, simulator=self.sim)
+        res = self.policy.bayes_search(
+            max_num_probes=3,
+            num_search_each_probe=2,
+            simulator=self.sim,
+            score="EI",
+            num_rand_basis=self.num_rand_basis,
+        )
+        assert res.total_num_search == self.nrand + 3 * 2
+        X = self.policy.bayes_search(
+            max_num_probes=1, num_search_each_probe=3, simulator=None, score="TS", num_rand_basis=self.num_rand_basis
+        )
+        assert X.shape == (3, 2)
+        assert np.all((X >= self.min_X) & (X <= self.max_X))

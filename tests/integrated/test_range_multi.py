@@ -75,3 +75,20 @@ class TestRangeMulti:
         vid = res.pareto.volume_in_dominance([-1, -1], [0, 0])
         assert vid == pytest.approx(vid_ref, rel=1e-3)
         self.policy.get_score(score, xs=np.array([[0.0, 0.0]]))
+
+    def test_multi_probe_rand(self):
+        """several points per step with BLM predictors (num_rand_basis > 0): the virtual training points
+        need their basis Z per objective, otherwise training.add leaves Z shorter than X."""
+        self.policy.random_search(max_num_probes=self.nrand, simulator=self.sim)
+        res = self.policy.bayes_search(
+            max_num_probes=2,
+            num_search_each_probe=2,
+            simulator=self.sim,
+            score="HVPI",
+            num_rand_basis=self.num_rand_basis,
+        )
+        assert res.total_num_search == self.nrand + 2 * 2
+        X = self.policy.bayes_search(
+            max_num_probes=1, num_search_each_probe=3, simulator=None, score="TS", num_rand_basis=self.num_rand_basis
+        )
+        assert np.asarray(X).shape == (3, 2)

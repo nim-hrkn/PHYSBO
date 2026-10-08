@@ -398,6 +398,12 @@ class Policy(range_single.Policy):
 
         for n in range(1, N):
             virtual_trainings = [Variable(X=X[0:n, :]) for _ in range(K)]
+            # the basis of the already chosen points, one slab per objective ((k, n, nbasis), BLM only);
+            # without it training.add(X, t, Z=None) leaves Z shorter than X when the predictors are BLMs
+            virtual_Z = [predictor.get_basis(X[0:n, :]) for predictor in predictors]
+            if all(z is not None for z in virtual_Z):
+                for vt in virtual_trainings:
+                    vt.Z = np.stack(virtual_Z, axis=0)
             virtual_t = np.zeros((K, n, self.num_objectives))
             for i in range(self.num_objectives):
                 virtual_t[:, :, i] = predictors[i].get_predict_samples(
