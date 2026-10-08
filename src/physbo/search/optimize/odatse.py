@@ -112,7 +112,7 @@ def default_alg_dict(
             "param": {
                 "min_list": min_X,
                 "max_list": max_X,
-                "num_list": 21 * np.ones(dim, dtype=int),
+                "num_list": [21] * dim,
             },
             "bayes": {
                 "random_max_num_probes": 10,
